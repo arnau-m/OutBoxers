@@ -9,55 +9,154 @@ import {
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import dayjs from 'dayjs';
-import api from '../../Utils/api';
+import ListOptions from '../../Components/ListOptions/ListOptions';
 
 const HomeScreen = () => {
   const [uuid, setUuid] = useState('');
-  const [shiftList, setShiftList] = useState([]);
+  const [data, setData] = useState([]);
+  const [shiftList, setShiftList] = useState({});
   const [fechaIni, setFechaIni] = useState(new Date());
   const [fechaFin, setFechaFin] = useState(new Date());
+  const [horaIni, setHoraIni] = useState(new Date());
+  const [horaFin, setHoraFin] = useState(new Date());
   const [showDateIniPicker, setShowDateIniPicker] = useState(false);
   const [showDateFinPicker, setShowDateFinPicker] = useState(false);
+  const [showTimeIniPicker, setShowTimeIniPicker] = useState(false);
+  const [showTimeFinPicker, setShowTimeFinPicker] = useState(false);
 
   useEffect(() => {
-    const fetchInitialData = async () => {
-      try {
-        const objParams = { serialNumber: 'lauzhack-pi4' };
-        const response = await api.get('remoteassistance/v1/equipments', objParams);
-        setUuid(response[0]?.uuid);
-      } catch (error) {
-        console.error('Error obteniendo el UUID:', error);
-        Alert.alert('Error', 'No se pudo obtener el UUID.');
-      }
+    const initialShiftList = {
+      "b2a566d0-7daa-49a0-48ef-08dd0b0a1b7f": [
+        {
+          "id": "3c6118df-03b0-4ecd-9e17-448d8101d1f2",
+          "textColor": "#000000",
+          "backgroundColor": "#00beff",
+          "shiftName": "Morning",
+          "start": "2024-12-01T06:00:00Z",
+          "end": "2024-12-01T14:00:00Z"
+        },
+        {
+          "id": "64d109b9-7546-418c-bff8-4c6e537c3e35",
+          "textColor": "#ffffff",
+          "backgroundColor": "#ff5a00",
+          "shiftName": "Afternoon",
+          "start": "2024-12-01T14:00:00Z",
+          "end": "2024-12-01T22:00:00Z"
+        },
+        {
+          "id": "e2240b85-9d58-4e80-a17d-e356b1a968ba",
+          "textColor": "#000000",
+          "backgroundColor": "#f4a361",
+          "shiftName": "Night",
+          "start": "2024-11-30T22:00:00Z",
+          "end": "2024-12-01T06:00:00Z"
+        },
+        {
+          "id": "e2240b85-9d58-4e80-a17d-e356b1a968ba",
+          "textColor": "#000000",
+          "backgroundColor": "#f4a361",
+          "shiftName": "Night",
+          "start": "2024-12-01T22:00:00Z",
+          "end": "2024-12-02T06:00:00Z"
+        }
+      ],
+      "e41d7859-7b7e-4b98-48ec-08dd0b0a1b7f": [
+        {
+          "id": "23046db6-21bb-4f89-936c-b3caaeb7b5e0",
+          "textColor": "#000000",
+          "backgroundColor": "#00beff",
+          "shiftName": "Morning",
+          "start": "2024-12-01T06:00:00Z",
+          "end": "2024-12-01T14:00:00Z"
+        },
+        {
+          "id": "82d8911f-8cd7-40c0-acff-8a986bf486fc",
+          "textColor": "#ffffff",
+          "backgroundColor": "#ff5a00",
+          "shiftName": "Afternoon",
+          "start": "2024-12-01T14:00:00Z",
+          "end": "2024-12-01T22:00:00Z"
+        },
+        {
+          "id": "613f55c8-9319-487d-b3b5-26883ddb702c",
+          "textColor": "#000000",
+          "backgroundColor": "#f4a361",
+          "shiftName": "Night",
+          "start": "2024-11-30T22:00:00Z",
+          "end": "2024-12-01T06:00:00Z"
+        },
+        {
+          "id": "613f55c8-9319-487d-b3b5-26883ddb702c",
+          "textColor": "#000000",
+          "backgroundColor": "#f4a361",
+          "shiftName": "Night",
+          "start": "2024-12-01T22:00:00Z",
+          "end": "2024-12-02T06:00:00Z"
+        }
+      ],
+      "498f1304-2185-4157-5b6a-08dd0d20f3dd": [
+        {
+          "id": "efcdc984-c7c3-4973-99bd-72bbd5ac7bee",
+          "textColor": "#000000",
+          "backgroundColor": "#00beff",
+          "shiftName": "Morning",
+          "start": "2024-12-01T06:00:00Z",
+          "end": "2024-12-01T14:00:00Z"
+        },
+        {
+          "id": "f5091897-dc0d-40f2-b197-4c9fb40fab44",
+          "textColor": "#ffffff",
+          "backgroundColor": "#ff5a00",
+          "shiftName": "Afternoon",
+          "start": "2024-12-01T14:00:00Z",
+          "end": "2024-12-01T22:00:00Z"
+        },
+        {
+          "id": "92e58742-6627-41c3-812c-b382f67c1199",
+          "textColor": "#000000",
+          "backgroundColor": "#f4a361",
+          "shiftName": "Night",
+          "start": "2024-11-30T22:00:00Z",
+          "end": "2024-12-01T06:00:00Z"
+        },
+        {
+          "id": "92e58742-6627-41c3-812c-b382f67c1199",
+          "textColor": "#000000",
+          "backgroundColor": "#f4a361",
+          "shiftName": "Night",
+          "start": "2024-12-01T22:00:00Z",
+          "end": "2024-12-02T06:00:00Z"
+        }
+      ]
     };
 
-    fetchInitialData();
+    setShiftList(initialShiftList);
   }, []);
 
-  const handlerButton = async () => {
-    try {
-      const startTimestamp = fechaIni.toISOString();
-      const endTimestamp = fechaFin.toISOString();
-      const endpoint = `performance/v1/${uuid}/shift?startTimestamp=${encodeURIComponent(
-        startTimestamp
-      )}&endTimestamp=${encodeURIComponent(endTimestamp)}`;
-      const response = await api.get(endpoint);
-      setShiftList(response);
-    } catch (error) {
-      console.error('Error al obtener los turnos:', error);
-      Alert.alert('Error', 'No se pudieron cargar los turnos.');
+  const handlerButton = () => {
+    if (!uuid) {
+      Alert.alert('Error', 'Seleccione un UUID válido.');
+      return;
+    }
+
+    const shifts = shiftList[uuid] || [];
+    setData(shifts);
+  };
+
+  const handleAddActivity = (newActivity) => {
+    if (newActivity) {
+      setUuid(newActivity.uuid);
     }
   };
 
-  // Filtrar turnos duplicados por ID
-  const uniqueShifts = shiftList.filter(
+  const uniqueShifts = data.filter(
     (shift, index, self) =>
-      index === self.findIndex(s => s.id === shift.id) // Mantiene solo el primer elemento con un ID único
+      index === self.findIndex((s) => s.id === shift.id)
   );
 
   return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.label}>UUID: {uuid || 'No definido'}</Text>
+    <View style={styles.container}>
+      <ListOptions onSelect={handleAddActivity} serialNumbers={Object.keys(shiftList)} />
       <Text style={styles.label}>First Day</Text>
       <Text style={styles.dateText} onPress={() => setShowDateIniPicker(true)}>
         {dayjs(fechaIni).format('DD-MM-YYYY')}
@@ -101,7 +200,7 @@ const HomeScreen = () => {
           </View>
         ))}
       </View>
-    </ScrollView>
+    </View>
   );
 };
 
