@@ -71,24 +71,29 @@ class IoTDevice:
         print(telemetry_data)
         print("Telemetría enviada con éxito.")
 
-    async def send_machine_event(self, event_type, job_id, total_output_unit_count, machine_speed, power, job_output_count, production_time):
-        event_data = {
-            "type": event_type,
-            "equipmentId": self.machine_id,
-            "jobId": job_id,
-            "jobOutputUnitCount": job_output_count,
-            "totalOutputUnitCount": total_output_count,
-            "totalProductionTime": production_time,
-            "machinespeed": machine_speed,
-            "timestamp": datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
-            "totalworkingenergy": power
-        }
-        event_json = json.dumps([event_data])
+    def send_machine_event(self, event_type, job_id, job_output_unit_count, total_output_unit_count, production_time, machine_speed, power, timestamp):
+        event_data =[ 
+            {
+                "type": event_type,
+                "datasource": "10.0.4.103:80",
+                "equipmentId": self.machine_id,
+                "jobId": job_id,
+                "jobOutputUnitCount": job_output_unit_count,
+                "totalOutputUnitCount": total_output_unit_count,
+                "totalProductionTime": production_time,
+                "machinespeed": machine_speed,
+                "timestamp": datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+                "totalworkingenergy": power
+            }
+        ]
+            
+        event_json = json.dumps(event_data)
         message = Message(event_json)
         message.content_type = "application/json"
         message.content_encoding = "utf-8"
         message.custom_properties["messageType"] = "MachineEvent"
         
+        print(event_data)
         print("Enviando evento de máquina...")
         self.device_client.send_message(message)
         print("Evento de máquina enviado con éxito.")
@@ -130,7 +135,6 @@ if __name__ == "__main__":
     # Simulation loop for the entire day, incrementing by 10 minutes
     job_id = "CerealBox-1"
     job_output_count = 0
-    total_output_count = 0
     production_time = 0
 
     # Crear una cola para comunicación entre hilos
@@ -161,9 +165,23 @@ if __name__ == "__main__":
         power = 0
         objective = 0
         while start_timestamp.hour < 24:
+
+            # Create a start production event
+            start_event = device.send_machine_event(
+                "startProducing",
+                job_id,
+                job_output_count,
+                count,
+                production_time,
+                speed,
+                power,
+                start_timestamp
+            )
+            device.send_message_to_iot_hub(start_event)
             
             if not count_queue.empty():
                 count += count_queue.get()
+                job_output_count += 1
                 guardar_variable(ARCHIVO_CSV, "count", count)
                 print(f"Objeto detectado, cuenta actual: {count}")
                 if myUltra.getState():
@@ -183,47 +201,32 @@ if __name__ == "__main__":
                 print(f"Potencia consumida (kWh): {power}")
                 # Enviar telemetria
                 device.send_telemetry(count, speed, power, count_waste)
-            
-                # Create a start production event
-            start_event = send_machine_event(
-                event_type="startProducing",
-                job_id=job_id,
-                job_output_count=job_output_count,
-                total_output_count=total_output_count,
-                total_output_unit_count=count,
-                machine_speed=speed,
-                power=power,
-                production_time=production_time,
-                timestamp=start_timestamp
-            )
-            send_message_to_iot_hub(start_event)
 
             # Simulate production for 1 minutes
             production_duration = 60  # 600 seconds = 1 minutes
             production_time += production_duration
-            job_output_count += 10  # Increment job output count by 10 units (as an example)
-            total_output_count += 10  # Increment total output count by 10 units
 
             # Move timestamp forward by 10 minutes
             start_timestamp += datetime.timedelta(minutes=1)
 
             # Create a stop production event after 1 minutes of production
-            stop_event = send_machine_event(
-                event_type="stopProducing",
-                job_id=job_id,
-                job_output_count=job_output_count,
-                total_output_count=total_output_count,
-                production_time=production_time,
-                timestamp=start_timestamp
+            stop_event = device.send_machine_event(
+                "stopProducing",
+                job_id,
+                job_output_count,
+                count,
+                production_time,
+                speed,
+                power,
+                start_timestamp
             )
-            send_message_to_iot_hub(stop_event)
+            device.send_message_to_iot_hub(stop_event)
 
             # Move timestamp forward by another 1 minutes for the next cycle
             start_timestamp += datetime.timedelta(minutes=1)
 
             # Wait a short time to simulate processing delay (to avoid flooding)
-            time.sleep(1) 
+            time.sleep(2) 
 
     except KeyboardInterrupt:
         print("Interrupción por teclado, cerrando.")
-    
