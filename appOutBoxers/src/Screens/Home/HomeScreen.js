@@ -20,13 +20,6 @@ const HomeScreen = () => {
   const [showDateFinPicker, setShowDateFinPicker] = useState(false);
 
   useEffect(() => {
-    if (!uuid) {
-      Alert.alert('Error', 'UUID no está definido.');
-      return;
-    }
-  }, [uuid]);
-
-  useEffect(() => {
     const fetchInitialData = async () => {
       try {
         const objParams = { serialNumber: 'lauzhack-pi4' };
