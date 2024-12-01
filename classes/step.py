@@ -12,10 +12,10 @@ class step:
         self.in4 = in4
         
         # Velocidad de paso
-        self.step_sleep = 0.002
+        self.step_sleep = 0.001
 
         # Número de pasos para mover -30 grados
-        self.step_count = int(((-17 * 4096) / 360))  # Aproximadamente -343 pasos
+        self.step_count = int(((-30 * 4096) / 360))  # Aproximadamente -343 pasos
 
         # Definir la dirección para mover -30 grados (True = antihorario)
         self.direction = True  # False para sentido horario, True para antihorario
